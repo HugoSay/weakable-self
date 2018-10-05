@@ -75,7 +75,13 @@ private class Consumer: NSObject {
     }
     
     let producer = Producer()
-    
+
+    func consumeWithoutWeakify() {
+        producer.registerZeroArg(handler: {
+            self.handleZeroArg()
+        })
+    }
+
     func consumeZeroArg() {
         producer.registerZeroArg(handler: weakify { strongSelf in
             strongSelf.handleZeroArg()
@@ -164,6 +170,20 @@ class SharedTests: XCTestCase {
         
         producerWasDeinit = false
         consumerWasDeinit = false
+    }
+
+    /// This test proves that without the use of weakify a memory leak is indeed created.
+    func testWithoutWeakifying() {
+        var consumer: Consumer? = Consumer()
+        consumer?.consumeWithoutWeakify()
+
+        XCTAssertFalse(producerWasDeinit, "producerWasDeinit")
+        XCTAssertFalse(consumerWasDeinit, "consumerWasDeinit")
+
+        consumer = nil
+
+        XCTAssertFalse(producerWasDeinit, "producerWasDeinit")
+        XCTAssertFalse(consumerWasDeinit, "consumerWasDeinit")
     }
     
     func testWeakifyZeroArgument() {
